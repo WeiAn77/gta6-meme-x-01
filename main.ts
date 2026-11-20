@@ -20,10 +20,24 @@ const STATUS_URL =
   /^https:\/\/(x\.com|twitter\.com)\/[A-Za-z0-9_]+\/status\/[0-9]+$/;
 
 const postPath = join(BOT_DIR, "POST.json");
-const post = JSON.parse(readFileSync(postPath, "utf8")) as { url?: unknown };
+let post: { url?: unknown };
+try {
+  post = JSON.parse(readFileSync(postPath, "utf8")) as { url?: unknown };
+} catch (err) {
+  console.error(`POST.json is not valid JSON: ${(err as Error).message}`);
+  process.exit(1);
+}
 
 if (typeof post.url !== "string" || !STATUS_URL.test(post.url)) {
   console.error(`POST.json must name an X status URL, got: ${String(post.url)}`);
+  process.exit(1);
+}
+
+// The entry post must be the entrant's own: this repo belongs to
+// @weian_77, so a status URL from any other account is a mistake.
+const account = post.url.split("/")[3];
+if (account !== "weian_77") {
+  console.error(`POST.json must name a @weian_77 status, got account: ${account}`);
   process.exit(1);
 }
 
